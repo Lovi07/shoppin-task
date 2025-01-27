@@ -41,3 +41,6 @@ Motion-Based Frames: May focus on frames with high activity, such as moving obje
 Scene Change-Based Frames: May focus on frames where the background or lighting changes abruptly.
 
 Clustering-Based Frames: Captures a mix of frames, including those with subtle changes, diverse backgrounds, and varying objects.
+
+Reference :
+Chatgpt and Deepseek R1
