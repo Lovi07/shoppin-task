@@ -9,61 +9,61 @@ import os
 
 # Function to extract VGG16 features from a frame
 def extract_vgg_features(frame):
-    frame = cv2.resize(frame, (224, 224))
-    img_array = image.img_to_array(frame)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array = preprocess_input(img_array)
-    features = VGG16(weights="imagenet", include_top=False, pooling="avg").predict(img_array)
-    return features.flatten()
+    frame = cv2.resize(frame, (224, 224))  # Resize frame to 224x224 (required by VGG16)
+    img_array = image.img_to_array(frame)  # Convert frame to a NumPy array
+    img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
+    img_array = preprocess_input(img_array)  # Preprocess input for VGG16
+    features = VGG16(weights="imagenet", include_top=False, pooling="avg").predict(img_array)  # Extract features
+    return features.flatten()  # Flatten features to 1D array
 
 # Function to compute histogram difference
 def histogram_difference(frame1, frame2):
-    hist1 = cv2.calcHist([frame1], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
-    hist2 = cv2.calcHist([frame2], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
-    hist1 = cv2.normalize(hist1, hist1).flatten()
-    hist2 = cv2.normalize(hist2, hist2).flatten()
-    return cv2.compareHist(hist1, hist2, cv2.HISTCMP_BHATTACHARYYA)
+    hist1 = cv2.calcHist([frame1], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])  # Compute histogram for frame1
+    hist2 = cv2.calcHist([frame2], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])  # Compute histogram for frame2
+    hist1 = cv2.normalize(hist1, hist1).flatten()  # Normalize and flatten histogram
+    hist2 = cv2.normalize(hist2, hist2).flatten()  # Normalize and flatten histogram
+    return cv2.compareHist(hist1, hist2, cv2.HISTCMP_BHATTACHARYYA)  # Compare histograms
 
 # Function to detect scene changes using histogram comparison
 def detect_scene_changes(video_path, threshold=0.2):
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(video_path)  # Open the video file
     prev_frame = None
     scene_change_frames = []
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = cap.read()  # Read the next frame
         if not ret:
             break
 
         if prev_frame is not None:
-            diff = histogram_difference(prev_frame, frame)
-            if diff > threshold:
+            diff = histogram_difference(prev_frame, frame)  # Compute histogram difference
+            if diff > threshold:  # If difference exceeds threshold, consider it a scene change
                 scene_change_frames.append(frame)
 
-        prev_frame = frame
+        prev_frame = frame  # Update previous frame
 
-    cap.release()
-    return scene_change_frames[:5]  # Limit to 20 frames
+    cap.release()  # Release the video capture object
+    return scene_change_frames[:5]  # Limit to 5 frames
 
 # Function to select frames based on motion
 def motion_based_selection(video_path, num_frames=5):
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(video_path)  # Open the video file
     prev_frame = None
     motion_scores = []
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = cap.read()  # Read the next frame
         if not ret:
             break
 
         if prev_frame is not None:
-            diff = cv2.absdiff(prev_frame, frame)
-            motion_score = np.mean(diff)
-            motion_scores.append((frame, motion_score))
+            diff = cv2.absdiff(prev_frame, frame)  # Compute absolute difference between frames
+            motion_score = np.mean(diff)  # Compute mean difference as motion score
+            motion_scores.append((frame, motion_score))  # Save frame and motion score
 
-        prev_frame = frame
+        prev_frame = frame  # Update previous frame
 
-    cap.release()
+    cap.release()  # Release the video capture object
 
     # Sort frames by motion score and select top frames
     motion_scores.sort(key=lambda x: x[1], reverse=True)
@@ -72,47 +72,47 @@ def motion_based_selection(video_path, num_frames=5):
 
 # Function to cluster frames using VGG16 features
 def cluster_frames(video_path, num_clusters=5):
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(video_path)  # Open the video file
     frames = []
     features = []
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = cap.read()  # Read the next frame
         if not ret:
             break
 
-        frames.append(frame)
-        feature = extract_vgg_features(frame)
-        features.append(feature)
+        frames.append(frame)  # Save the frame
+        feature = extract_vgg_features(frame)  # Extract features using VGG16
+        features.append(feature)  # Save the features
 
-    cap.release()
+    cap.release()  # Release the video capture object
 
     # Perform K-Means clustering
     kmeans = KMeans(n_clusters=num_clusters, random_state=42)
-    clusters = kmeans.fit_predict(features)
+    clusters = kmeans.fit_predict(features)  # Cluster the frames
 
     # Select one frame from each cluster
     selected_frames = []
     for cluster_id in range(num_clusters):
-        cluster_indices = np.where(clusters == cluster_id)[0]
+        cluster_indices = np.where(clusters == cluster_id)[0]  # Find frames in the cluster
         centroid_index = cluster_indices[0]  # Select the first frame in the cluster
-        selected_frames.append(frames[centroid_index])
+        selected_frames.append(frames[centroid_index])  # Save the frame
 
     return selected_frames
 
 # Function to convert video to 15 FPS
 def convert_to_15fps(video_path, output_path):
-    cap = cv2.VideoCapture(video_path)
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    cap = cv2.VideoCapture(video_path)  # Open the video file
+    fps = int(cap.get(cv2.CAP_PROP_FPS))  # Get the original FPS
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))  # Get the frame width
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))  # Get the frame height
 
     # Define the codec and create VideoWriter object
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    out = cv2.VideoWriter(output_path, fourcc, 15, (width, height))
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # Use MP4 codec
+    out = cv2.VideoWriter(output_path, fourcc, 15, (width, height))  # Set output FPS to 15
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = cap.read()  # Read the next frame
         if not ret:
             break
 
@@ -123,13 +123,13 @@ def convert_to_15fps(video_path, output_path):
         for _ in range(int(fps / 15) - 1):
             cap.read()
 
-    cap.release()
-    out.release()
+    cap.release()  # Release the video capture object
+    out.release()  # Release the video writer object
 
 # Streamlit app
 def main():
     st.title("Video Frame Selection App")
-    st.write("Upload a 60-second video to extract the best 20 frames using three methods.")
+    st.write("Upload a 60-second video to extract the best 5 frames using three methods.")
 
     # Upload video
     uploaded_file = st.file_uploader("Upload a 60-second video", type=["mp4", "avi", "mov"])
