@@ -1,3 +1,12 @@
+---
+license: mit
+title: frameselections
+sdk: streamlit
+emoji: 📊
+colorFrom: indigo
+colorTo: green
+sdk_version: 1.41.1
+---
 # Video Frame Selection
 
 This is a Streamlit app that allows users to upload a 60-second video and extract the best 20 frames using three methods:
