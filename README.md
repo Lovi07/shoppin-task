@@ -11,8 +11,34 @@ sdk_version: 1.41.1
 
 This is a Streamlit app that allows users to upload a 60-second video and extract the best 20 frames using three methods:
 1. **Motion-Based Selection**: Frames with the most motion.
-2. **Scene Change-Based Selection**: Frames where significant scene changes occur.
-3. **Clustering-Based Selection**: Representative frames from different clusters.
+
+Compute the absolute difference between consecutive frames.
+
+Frames with higher differences indicate more motion.
+
+Select the top 5 frames with the highest motion scores.
+
+3. **Scene Change-Based Selection**: Frames where significant scene changes occur.
+Select frames where significant scene changes occur.
+
+How It Works:
+
+Compare histograms of consecutive frames.
+
+If the histogram difference exceeds a threshold, consider it a scene change.
+
+Select the top 20 frames where scene changes are detected.
+
+5. **Clustering-Based Selection**: Representative frames from different clusters.
+Select diverse and representative frames by grouping similar frames.
+
+How It Works:
+
+Extract features from each frame using a pre-trained model (e.g., VGG16).
+
+Use K-Means clustering to group similar frames into clusters.
+
+Select one representative frame from each cluster.
 
 The app first converts the video to 15 FPS and then applies the frame selection methods.
 
